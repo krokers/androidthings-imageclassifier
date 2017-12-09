@@ -18,18 +18,18 @@ package com.example.androidthings.imageclassifier;
 import android.app.Activity;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.KeyEvent;
 
+import com.google.android.things.contrib.driver.button.Button;
 import com.google.android.things.contrib.driver.button.ButtonInputDriver;
-import com.google.android.things.contrib.driver.rainbowhat.RainbowHat;
 
 import java.io.IOException;
 
 public class ImageClassifierActivity extends Activity {
     private static final String TAG = "ImageClassifierActivity";
+    private static final String PIN_BUTTON = "GPIO_174";
 
     private ButtonInputDriver mButtonDriver;
     private boolean mProcessing;
@@ -91,7 +91,6 @@ public class ImageClassifierActivity extends Activity {
     }
 
 
-
     // --------------------------------------------------------------------------------------
     // NOTE: The normal codelab flow won't require you to change anything below this line,
     // although you are encouraged to read and understand it.
@@ -109,13 +108,16 @@ public class ImageClassifierActivity extends Activity {
      * Register a GPIO button that, when clicked, will generate the {@link KeyEvent#KEYCODE_ENTER}
      * key, to be handled by {@link #onKeyUp(int, KeyEvent)} just like any regular keyboard
      * event.
-     *
+     * <p>
      * If there's no button connected to the board, the doRecognize can still be triggered by
      * sending key events using a USB keyboard or `adb shell input keyevent 66`.
      */
     private void initButton() {
         try {
-            mButtonDriver = RainbowHat.createButtonCInputDriver(KeyEvent.KEYCODE_ENTER);
+            mButtonDriver = new ButtonInputDriver(PIN_BUTTON,
+                    Button.LogicState.PRESSED_WHEN_HIGH,
+                    KeyEvent.KEYCODE_ENTER // the keycode to send
+            );
             mButtonDriver.register();
         } catch (IOException e) {
             Log.w(TAG, "Cannot find button. Ignoring push button. Use a keyboard instead.", e);
