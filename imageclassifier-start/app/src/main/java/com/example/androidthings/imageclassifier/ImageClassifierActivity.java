@@ -18,8 +18,9 @@ package com.example.androidthings.imageclassifier;
 import android.app.Activity;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.drawable.BitmapDrawable;
+import android.media.ImageReader;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
@@ -46,7 +47,8 @@ public class ImageClassifierActivity extends Activity {
     private TextView messageView;
     private ImageView imageView;
     private ProgressBar progressView;
-    // ADD CAMERA SUPPORT
+    private CameraHandler mCameraHandler;
+    private ImagePreprocessor mImagePreprocessor;
 
     /**
      * Initialize the classifier that will be used to process images.
@@ -104,14 +106,25 @@ public class ImageClassifierActivity extends Activity {
      * Initialize the camera that will be used to capture images.
      */
     private void initCamera() {
-        // ADD CAMERA SUPPORT
+        mImagePreprocessor = new ImagePreprocessor();
+        mCameraHandler = CameraHandler.getInstance();
+        Handler threadLooper = new Handler(getMainLooper());
+
+        mCameraHandler.initializeCamera(this, threadLooper,
+                new ImageReader.OnImageAvailableListener() {
+                    @Override
+                    public void onImageAvailable(ImageReader imageReader) {
+                        Bitmap bitmap = mImagePreprocessor.preprocessImage(imageReader.acquireNextImage());
+                        onPhotoReady(bitmap);
+                    }
+                });
     }
 
     /**
      * Clean up resources used by the camera.
      */
     private void closeCamera() {
-        // ADD CAMERA SUPPORT
+        mCameraHandler.shutDown();
     }
 
     /**
@@ -119,9 +132,7 @@ public class ImageClassifierActivity extends Activity {
      * When done, the method {@link #onPhotoReady(Bitmap)} must be called with the image.
      */
     private void loadPhoto() {
-        // ADD CAMERA SUPPORT
-        Bitmap bitmap = getStaticBitmap();
-        onPhotoReady(bitmap);
+        mCameraHandler.takePicture();
     }
 
 
