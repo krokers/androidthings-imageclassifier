@@ -18,9 +18,14 @@ package com.example.androidthings.imageclassifier;
 import android.app.Activity;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.View;
+import android.widget.ImageView;
+import android.widget.ProgressBar;
+import android.widget.TextView;
 
 import com.google.android.things.contrib.driver.button.Button;
 import com.google.android.things.contrib.driver.button.ButtonInputDriver;
@@ -38,6 +43,9 @@ public class ImageClassifierActivity extends Activity {
 
     private String[] labels;
     private TensorFlowInferenceInterface inferenceInterface;
+    private TextView messageView;
+    private ImageView imageView;
+    private ProgressBar progressView;
     // ADD CAMERA SUPPORT
 
     /**
@@ -68,6 +76,8 @@ public class ImageClassifierActivity extends Activity {
      */
     private void doRecognize(Bitmap image) {
 
+        imageView.setImageBitmap(image);
+        Log.d(TAG, "Starting recognition");
         float[] pixels = Helper.getPixels(image);
 
         // Feed the pixels of the image into the
@@ -82,6 +92,7 @@ public class ImageClassifierActivity extends Activity {
         // into an array of confidence per category
         float[] outputs = new float[Helper.NUM_CLASSES];
         inferenceInterface.fetch(Helper.OUTPUT_NAME, outputs);
+        Log.d(TAG, "Recognition finished");
 
         // Send to the callback the results with the highest
         // confidence and their labels
@@ -121,10 +132,18 @@ public class ImageClassifierActivity extends Activity {
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        initLayout();
         initCamera();
         initClassifier();
         initButton();
         Log.d(TAG, "READY");
+    }
+
+    private void initLayout() {
+        setContentView(R.layout.main_activity);
+        messageView = findViewById(R.id.message);
+        imageView = findViewById(R.id.image);
+        progressView = (ProgressBar) findViewById(R.id.progress);
     }
 
     /**
@@ -156,10 +175,11 @@ public class ImageClassifierActivity extends Activity {
     public boolean onKeyUp(int keyCode, KeyEvent event) {
         if (keyCode == KeyEvent.KEYCODE_ENTER) {
             if (mProcessing) {
-                Log.e(TAG, "Still processing, please wait");
+                displayMessage("Still processing, please wait");
                 return true;
             }
-            Log.d(TAG, "Running photo recognition");
+            showProgress();
+            displayMessage("Running photo recognition");
             mProcessing = true;
             loadPhoto();
             return true;
@@ -167,13 +187,30 @@ public class ImageClassifierActivity extends Activity {
         return super.onKeyUp(keyCode, event);
     }
 
+    private void showProgress() {
+        imageView.setVisibility(View.GONE);
+        progressView.setVisibility(View.VISIBLE);
+    }
+
+    private void hideProgress() {
+        progressView.setVisibility(View.GONE);
+        imageView.setVisibility(View.VISIBLE);
+    }
+
     private void onPhotoReady(Bitmap bitmap) {
+        Log.d(TAG, "Photo ready");
         doRecognize(bitmap);
     }
 
     private void onPhotoRecognitionReady(String[] results) {
-        Log.d(TAG, "RESULTS: " + Helper.formatResults(results));
+        String message = String.format("RESULT: %1$s", Helper.formatResults(results));
+        displayMessage(message);
         mProcessing = false;
+        hideProgress();
+    }
+
+    private void displayMessage(String message) {
+        messageView.setText(message);
     }
 
     @Override
