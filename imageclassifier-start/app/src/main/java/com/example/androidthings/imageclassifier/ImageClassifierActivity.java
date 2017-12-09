@@ -25,6 +25,8 @@ import android.view.KeyEvent;
 import com.google.android.things.contrib.driver.button.Button;
 import com.google.android.things.contrib.driver.button.ButtonInputDriver;
 
+import org.tensorflow.contrib.android.TensorFlowInferenceInterface;
+
 import java.io.IOException;
 
 public class ImageClassifierActivity extends Activity {
@@ -33,21 +35,25 @@ public class ImageClassifierActivity extends Activity {
 
     private ButtonInputDriver mButtonDriver;
     private boolean mProcessing;
-    // ADD ARTIFICIAL INTELLIGENCE
+
+    private String[] labels;
+    private TensorFlowInferenceInterface inferenceInterface;
     // ADD CAMERA SUPPORT
 
     /**
      * Initialize the classifier that will be used to process images.
      */
     private void initClassifier() {
-        // ADD ARTIFICIAL INTELLIGENCE
+        this.inferenceInterface = new TensorFlowInferenceInterface(
+                getAssets(), Helper.MODEL_FILE);
+        this.labels = Helper.readLabels(this);
     }
 
     /**
      * Clean up the resources used by the classifier.
      */
     private void destroyClassifier() {
-        // ADD ARTIFICIAL INTELLIGENCE
+        inferenceInterface.close();
     }
 
     /**
@@ -61,9 +67,26 @@ public class ImageClassifierActivity extends Activity {
      *              and power consuming.
      */
     private void doRecognize(Bitmap image) {
-        // ADD ARTIFICIAL INTELLIGENCE
-        String[] results = null;
-        onPhotoRecognitionReady(results);
+
+        float[] pixels = Helper.getPixels(image);
+
+        // Feed the pixels of the image into the
+        // TensorFlow Neural Network
+        inferenceInterface.feed(Helper.INPUT_NAME, pixels,
+                Helper.NETWORK_STRUCTURE);
+
+        // Run the TensorFlow Neural Network with the provided input
+        inferenceInterface.run(Helper.OUTPUT_NAMES);
+
+        // Extract the output from the neural network back
+        // into an array of confidence per category
+        float[] outputs = new float[Helper.NUM_CLASSES];
+        inferenceInterface.fetch(Helper.OUTPUT_NAME, outputs);
+
+        // Send to the callback the results with the highest
+        // confidence and their labels
+        onPhotoRecognitionReady(Helper.getBestResults(outputs, labels));
+
     }
 
     /**
