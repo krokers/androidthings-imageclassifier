@@ -115,7 +115,7 @@ public class ImageClassifierActivity extends Activity {
     private void initButton() {
         try {
             mButtonDriver = new ButtonInputDriver(PIN_BUTTON,
-                    Button.LogicState.PRESSED_WHEN_HIGH,
+                    Button.LogicState.PRESSED_WHEN_LOW,
                     KeyEvent.KEYCODE_ENTER // the keycode to send
             );
             mButtonDriver.register();
